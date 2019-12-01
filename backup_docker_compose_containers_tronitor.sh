@@ -20,6 +20,8 @@ days=$(( ( $(date '+%s') - $(date -d '2 months ago' '+%s') ) / 86400 ))
 domain='domain.com'
 # Define your SMS e-mail address (AT&T as an example)
 smsAddress='5551235555@txt.att.net'
+# Exclude containers
+exclude=("synclounge" "mongo")
 # Arguments
 readonly args=("$@")
 # Colors
@@ -154,7 +156,11 @@ compose_down() {
 # Loop through all containers to backup appdata dirs
 backup() {
     while IFS= read -r CONTAINER; do
-        tar czf "${backupDirectory}""${CONTAINER}"-"${today}".tar.gz "${appdataDirectory}""${CONTAINER}"/
+        if [ "${CONTAINER}" == "plex" ]; then
+            tar --exclude 'plex/Plex Media Server/Cache' --exclude 'plex/Plex Media Server/Media' --exclude 'plex/Plex Media Server/Metadata' -czf "${backupDirectory}""${CONTAINER}"-"${today}".tar.gz -C "${appdataDirectory}" "${CONTAINER}"/
+        elif [[ ! "${exclude[@]}" =~ "${CONTAINER}" ]]; then
+            tar czf "${backupDirectory}""${CONTAINER}"-"${today}".tar.gz -C "${appdataDirectory}" "${CONTAINER}"/
+        fi
     done < <(cat "${containerNamesFile}")
 }
 
